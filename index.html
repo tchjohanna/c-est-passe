@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Après avoir parlé</title>
+  <meta name="theme-color" content="#8fb89a" />
+  <meta name="description" content="Une app douce pour arrêter la rumination et la culpabilité après avoir parlé." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f6f3ee;
+      --bg-soft: #fbfaf7;
+      --card: rgba(255,255,255,0.84);
+      --text: #2c2b2a;
+      --muted: #6f6c68;
+      --line: rgba(60,60,60,0.08);
+      --sage: #8fb89a;
+      --sage-dark: #5f7e68;
+      --lav: #d8cdea;
+      --sand: #eadccf;
+      --rose: #efd4d9;
+      --shadow: 0 10px 30px rgba(50,50,50,0.08);
+      --shadow-lg: 0 18px 48px rgba(50,50,50,0.12);
+      --radius: 24px;
+      --radius-sm: 16px;
+      --font-serif: 'DM Serif Display', Georgia, serif;
+      --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: var(--font-sans);
+      background: radial-gradient(circle at top, #fffdf9 0%, var(--bg) 52%, #f0ebe4 100%);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -20% -10%;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(143,184,154,0.22), transparent 30%),
+        radial-gradient(circle at 85% 18%, rgba(216,205,234,0.28), transparent 32%),
+        radial-gradient(circle at 50% 90%, rgba(239,212,217,0.24), transparent 34%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+
+    #app {
+      position: relative;
+      width: 100%;
+      max-width: 430px;
+      height: 100vh;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 22px 18px 120px;
+      overflow-y: auto;
+      transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .30s ease;
+      background: transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+    .screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+    .screen.exit-left { transform: translateX(-18%); opacity: 0; pointer-events: none; }
+    .screen::-webkit-scrollbar { width: 4px; }
+    .screen::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.10); border-radius: 6px; }
+
+    .top-space { height: 12px; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 24px;
+      border: 1px solid rgba(255,255,255,0.65);
+      border-radius: 30px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.68) 100%);
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: rgba(143,184,154,0.15);
+      color: var(--sage-dark);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-family: var(--font-serif);
+      font-size: 32px;
+      line-height: 1.1;
+      letter-spacing: -.01em;
+      font-weight: 400;
+    }
+    h1 em { font-style: italic; color: var(--sage-dark); }
+
+    .hero p, .muted { color: var(--muted); line-height: 1.65; }
+    .hero p { margin: 0; font-size: 15px; }
+
+    .cta-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+    button, .quick-btn {
+      border: none;
+      border-radius: 999px;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .2s ease, opacity .2s ease, background .2s ease;
+    }
+    button:active, .quick-btn:active { transform: scale(.97); }
+
+    .btn-primary {
+      padding: 16px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--sage) 0%, #7aa58a 100%);
+      box-shadow: 0 10px 24px rgba(122,165,138,.30);
+      flex: 1;
+      letter-spacing: .01em;
+    }
+
+    .btn-secondary {
+      padding: 16px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.80);
+      color: var(--text);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.68);
+      backdrop-filter: blur(18px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -.01em;
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -.01em;
+    }
+
+    /* ── QUICK GRID ── */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .quick-btn {
+      text-align: left;
+      padding: 16px;
+      border-radius: 20px;
+      min-height: 92px;
+      background: linear-gradient(160deg, rgba(255,255,255,.85), rgba(255,255,255,.65));
+      border: 1px solid rgba(255,255,255,0.75);
+      box-shadow: 0 6px 16px rgba(0,0,0,.05);
+      font-family: var(--font-sans);
+    }
+    .quick-btn strong { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .quick-btn span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .quick-btn:hover { box-shadow: 0 8px 22px rgba(0,0,0,.09); }
+
+    /* ── STEPS ── */
+    .steps { display: grid; gap: 10px; }
+    .step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.60);
+      border: 1px solid rgba(255,255,255,.75);
+    }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--sage-dark);
+      background: rgba(143,184,154,0.18);
+      flex-shrink: 0;
+    }
+    .step p { margin: 3px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .step strong { font-size: 14px; font-weight: 700; }
+
+    /* ── AFFIRMATIONS ── */
+    .affirmations { display: grid; gap: 10px; }
+    .affirmation {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.85), rgba(255,255,255,0.68));
+      border: 1px solid rgba(255,255,255,0.72);
+      font-size: 15px;
+      font-family: var(--font-sans);
+      line-height: 1.55;
+      cursor: pointer;
+      position: relative;
+      text-align: left;
+      color: var(--text);
+      transition: background .18s ease, box-shadow .18s ease, transform .15s ease;
+    }
+    .affirmation:hover { background: linear-gradient(160deg, rgba(255,255,255,0.95), rgba(255,255,255,0.82)); box-shadow: 0 6px 18px rgba(0,0,0,.07); }
+    .affirmation small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      opacity: 0.8;
+    }
+    .affirmation.copied {
+      background: rgba(143,184,154,0.14) !important;
+      color: var(--sage-dark);
+    }
+
+    /* ── BREATH ── */
+    .breath {
+      text-align: center;
+      padding: 28px 16px 22px;
+      background: linear-gradient(160deg, rgba(216,205,234,0.32), rgba(255,255,255,0.72));
+      position: relative;
+      overflow: hidden;
+    }
+
+    .breath-timer-ring {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 18px;
+    }
+
+    .breath-svg {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+
+    .breath-track {
+      fill: none;
+      stroke: rgba(143,184,154,0.18);
+      stroke-width: 4;
+    }
+
+    .breath-progress {
+      fill: none;
+      stroke: var(--sage);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 345;
+      stroke-dashoffset: 345;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .orb {
+      width: 100px;
+      height: 100px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(.88);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.98), rgba(143,184,154,.55));
+      box-shadow: 0 0 0 0 rgba(143,184,154,.22);
+      animation: breathe 6s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%,100% { transform: translate(-50%, -50%) scale(.88); box-shadow: 0 0 0 0 rgba(143,184,154,.18); }
+      50% { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 0 0 18px rgba(143,184,154,0); }
+    }
+
+    .phase {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--sage-dark);
+      margin-bottom: 10px;
+      min-height: 18px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    .breath-count {
+      font-family: var(--font-serif);
+      font-size: 38px;
+      color: var(--sage-dark);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .breath-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .breath-restart {
+      background: rgba(143,184,154,0.15);
+      color: var(--sage-dark);
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* ── JOURNAL ── */
+    .journal-box {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      padding: 14px 16px;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      background: rgba(255,255,255,0.75);
+      color: var(--text);
+      line-height: 1.55;
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+      margin-top: 12px;
+    }
+    .journal-box:focus { border-color: rgba(143,184,154,0.5); box-shadow: 0 0 0 3px rgba(143,184,154,0.12); }
+
+    /* ── CHIPS ── */
+    .selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .chip {
+      padding: 10px 15px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.80);
+      border: 1px solid rgba(0,0,0,0.05);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background .15s, color .15s;
+    }
+    .chip.active { background: rgba(143,184,154,0.18); color: var(--sage-dark); border-color: rgba(143,184,154,0.3); }
+    .chip:hover { background: rgba(255,255,255,0.95); }
+
+    /* ── RESULT ── */
+    .result {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(143,184,154,0.14), rgba(216,205,234,0.14));
+      color: var(--sage-dark);
+      font-weight: 600;
+      line-height: 1.6;
+      border: 1px solid rgba(143,184,154,0.22);
+      font-size: 15px;
+    }
+    .result strong { color: var(--text); }
+
+    /* ── FOOTER BAR ── */
+    .footer-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      padding: 10px 14px calc(14px + env(safe-area-inset-bottom));
+      background: linear-gradient(180deg, rgba(246,243,238,0.45), rgba(246,243,238,0.97));
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      display: flex;
+      gap: 8px;
+      z-index: 40;
+    }
+
+    .nav-btn {
+      flex: 1;
+      padding: 13px 8px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.72);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .01em;
+      transition: all .2s ease;
+    }
+    .nav-btn.active {
+      background: linear-gradient(160deg, rgba(143,184,154,0.22), rgba(143,184,154,0.12));
+      color: var(--sage-dark);
+      box-shadow: 0 2px 10px rgba(143,184,154,0.2);
+    }
+    .nav-btn .nav-icon { display: block; font-size: 16px; margin-bottom: 3px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 92px;
+      transform: translateX(-50%) translateY(12px);
+      background: rgba(44,43,42,0.94);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s cubic-bezier(.2,.8,.2,1);
+      z-index: 100;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── FOOTER laboWeb ── */
+    .lw-footer {
+      background: rgba(255,255,255,0.62);
+      border-top: 1px solid rgba(0,0,0,0.05);
+      padding: 26px 20px 34px;
+      margin-top: 8px;
+      flex-shrink: 0;
+      border-radius: 24px;
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+    }
+    .lw-footer-container { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; }
+    .lw-footer-brand h3 {
+      margin: 0 0 4px;
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--sage-dark);
+    }
+    .lw-footer-brand p { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 240px; }
+    .lw-footer-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .lw-footer-links a {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      background: var(--sand);
+      padding: 8px 16px;
+      border-radius: 20px;
+      transition: background .15s, color .15s;
+    }
+    .lw-footer-links a:hover { background: rgba(143,184,154,0.20); color: var(--sage-dark); }
+    .lw-footer-legal p { margin: 0 0 6px; font-size: 11px; color: var(--muted); }
+    .btn-replay {
+      margin-top: 6px;
+      background: var(--lav);
+      color: #6f5689;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 20px;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 2px 10px rgba(139,109,174,0.18);
+      cursor: pointer;
+    }
+
+    /* ── ONBOARDING ── */
+    #onboarding {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      overflow: hidden;
+      transition: opacity .5s ease, transform .5s ease;
+      user-select: none;
+      background: rgba(246,243,238,0.94);
+      backdrop-filter: blur(16px);
+    }
+    #onboarding.fade-out { opacity: 0; transform: scale(1.03); pointer-events: none; }
+    #onboarding.hidden { display: none; }
+
+    .ob-topbar {
+      position: absolute;
+      top: 0; right: 0; left: 0;
+      display: flex;
+      justify-content: flex-end;
+      padding: 54px 24px 0;
+      z-index: 10;
+    }
+    .btn-skip {
+      background: rgba(255,255,255,0.85);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      cursor: pointer;
+    }
+
+    .ob-track {
+      display: flex;
+      width: 300%;
+      height: 100%;
+      transition: transform .42s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform;
+    }
+    .ob-track.dragging { transition: none; }
+
+    .ob-slide {
+      width: calc(100% / 3);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 92px 28px 178px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(143,184,154,0.18), transparent 24%),
+        radial-gradient(circle at 80% 20%, rgba(216,205,234,0.22), transparent 28%),
+        linear-gradient(180deg, #fbfaf7 0%, #f6f3ee 100%);
+    }
+
+    .ob-illustration {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.92);
+      display: grid;
+      place-items: center;
+      font-size: 44px;
+      box-shadow: 0 14px 34px rgba(50,50,50,0.10);
+      margin-bottom: 26px;
+    }
+    .ob-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sage-dark);
+      margin-bottom: 12px;
+    }
+    .ob-title {
+      font-family: var(--font-serif);
+      font-size: 30px;
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -.01em;
+      margin-bottom: 14px;
+      max-width: 310px;
+    }
+    .ob-title em { font-style: italic; color: var(--sage-dark); }
+    .ob-desc { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 295px; }
+
+    .ob-steps { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 310px; margin-top: 18px; }
+    .ob-step {
+      display: flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.78);
+      padding: 13px 16px;
+      border-radius: 16px;
+      text-align: left;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+    }
+    .ob-step-icon { font-size: 22px; flex-shrink: 0; }
+    .ob-step-text { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .ob-step-text strong { color: var(--text); display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+
+    .ob-install-card {
+      background: rgba(255,255,255,0.82);
+      border-radius: 20px;
+      padding: 4px 0;
+      width: 100%; max-width: 300px;
+      margin-top: 22px;
+      overflow: hidden;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+    }
+    .ob-install-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 13px 18px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      font-size: 13px; color: var(--muted); line-height: 1.45; text-align: left;
+    }
+    .ob-install-row:last-child { border-bottom: none; }
+    .ob-ir-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .ob-install-row strong { color: var(--text); display: block; font-weight: 700; margin-bottom: 1px; }
+
+    .ob-controls {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      padding: 0 28px calc(36px + env(safe-area-inset-bottom));
+      pointer-events: none;
+    }
+    .ob-dots { display: flex; gap: 8px; align-items: center; pointer-events: all; }
+    .ob-dot {
+      height: 8px; width: 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.18);
+      transition: width .35s cubic-bezier(0.34,1.56,0.64,1), background .35s ease;
+      cursor: pointer;
+    }
+    .ob-dot.active { width: 26px; background: var(--sage-dark); }
+
+    .ob-nav { display: flex; gap: 12px; width: 100%; max-width: 390px; pointer-events: all; }
+    .btn-ob-back {
+      background: rgba(255,255,255,0.88);
+      color: var(--muted);
+      padding: 16px 24px;
+      border-radius: 50px;
+      font-family: var(--font-sans);
+      font-size: 15px; font-weight: 700;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .btn-ob-back.invisible { opacity: 0; pointer-events: none; }
+    .btn-ob-next {
+      flex: 1;
+      background: linear-gradient(135deg, var(--sage) 0%, #7aa58a 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 50px;
+      font-family: var(--font-sans);
+      font-size: 15px; font-weight: 800;
+      box-shadow: 0 10px 24px rgba(122,165,138,.30);
+      cursor: pointer;
+    }
+    .btn-ob-next.final { background: linear-gradient(135deg, #9b8bbd 0%, #7d6b9e 100%); box-shadow: 0 10px 22px rgba(125,107,158,.26); }
+
+    /* Progress indicator in flow */
+    .flow-progress {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .fp-step {
+      height: 4px;
+      flex: 1;
+      border-radius: 2px;
+      background: rgba(0,0,0,0.1);
+      transition: background .4s ease;
+    }
+    .fp-step.done { background: var(--sage); }
+    .fp-step.current { background: var(--sage-dark); }
+
+    /* Divider */
+    .divider { height: 1px; background: var(--line); margin: 4px 0 14px; }
+
+    @media (max-width: 360px) {
+      .quick-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 28px; }
+      .ob-title { font-size: 26px; }
+    }
+
+    /* Appear animation on screen load */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card, .hero { animation: fadeUp .4s ease both; }
+    .card:nth-child(2) { animation-delay: .06s; }
+    .card:nth-child(3) { animation-delay: .12s; }
+    .card:nth-child(4) { animation-delay: .18s; }
+    .screen.hidden .card, .screen.hidden .hero { animation: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ── ONBOARDING ── -->
+  <div id="onboarding">
+    <div class="ob-topbar">
+      <button class="btn-skip" id="btn-skip">Passer</button>
+    </div>
+
+    <div class="ob-track" id="ob-track">
+      <!-- Slide 1 -->
+      <div class="ob-slide">
+        <div class="ob-illustration">💛</div>
+        <div class="ob-label">laboWeb · Anti-rumination</div>
+        <div class="ob-title">Après avoir parlé,<br>tu peux <em>relâcher.</em></div>
+        <div class="ob-desc">Cette app t'aide à sortir de la boucle mentale, de la culpabilité et du sentiment d'avoir mal dit, mal fait, mal été.</div>
+      </div>
+
+      <!-- Slide 2 -->
+      <div class="ob-slide">
+        <div class="ob-illustration">🌿</div>
+        <div class="ob-label">Comment ça marche</div>
+        <div class="ob-title">Un flow guidé,<br><em>tout simple</em></div>
+        <div class="ob-steps">
+          <div class="ob-step">
+            <span class="ob-step-icon">1</span>
+            <div class="ob-step-text"><strong>Tu nommes la pensée</strong>"J'ai peur d'avoir blessé", "je me sens nulle", "ça tourne en boucle"…</div>
+          </div>
+          <div class="ob-step">
+            <span class="ob-step-icon">2</span>
+            <div class="ob-step-text"><strong>Tu reviens au réel</strong>La discussion est finie. Tu n'as pas besoin de te punir toute la soirée.</div>
+          </div>
+          <div class="ob-step">
+            <span class="ob-step-icon">3</span>
+            <div class="ob-step-text"><strong>Tu fermes la boucle</strong>Une phrase d'apaisement, un petit texte, et tu relâches.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 3 -->
+      <div class="ob-slide">
+        <div class="ob-illustration">📲</div>
+        <div class="ob-label">Installer l'app</div>
+        <div class="ob-title">Garde-la<br><em>près de toi</em></div>
+        <div class="ob-desc">Installe la PWA pour l'ouvrir comme une vraie mini-app dès que la rumination revient.</div>
+        <div class="ob-install-card">
+          <div class="ob-install-row">
+            <span class="ob-ir-icon">🤖</span>
+            <div><strong>Android (Chrome)</strong>Menu ⋮ → "Ajouter à l'écran d'accueil"</div>
+          </div>
+          <div class="ob-install-row">
+            <span class="ob-ir-icon">🍎</span>
+            <div><strong>iPhone (Safari)</strong>Partager → "Sur l'écran d'accueil"</div>
+          </div>
+          <div class="ob-install-row">
+            <span class="ob-ir-icon">✨</span>
+            <div><strong>Prête quand tu en as besoin</strong>Tu peux la rouvrir en quelques secondes.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ob-controls">
+      <div class="ob-dots" id="ob-dots">
+        <div class="ob-dot active" data-slide="0"></div>
+        <div class="ob-dot" data-slide="1"></div>
+        <div class="ob-dot" data-slide="2"></div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-ob-back invisible" id="btn-ob-back">‹ Retour</button>
+        <button class="btn-ob-next" id="btn-ob-next">Suivant ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APP ── -->
+  <div id="app">
+
+    <!-- ACCUEIL -->
+    <section class="screen" id="screen-home">
+      <div class="top-space"></div>
+
+      <div class="hero">
+        <div class="eyebrow">💛 Anti-rumination après discussion</div>
+        <h1>Après avoir parlé,<br>tu peux <em>enfin relâcher.</em></h1>
+        <p>Cette app n'est pas là pour te faire mieux parler. Elle est là pour t'aider à arrêter la boucle mentale, la culpabilité et le sentiment d'avoir "mal dit".</p>
+        <div class="cta-row">
+          <button class="btn-primary" onclick="openFlow()">Ça recommence</button>
+          <button class="btn-secondary" onclick="navTo('screen-ressources')">Voir les outils</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Test immédiat</h2>
+        <p class="muted">Choisis ce qui ressemble le plus à ce qui se passe dans ta tête maintenant.</p>
+        <div class="quick-grid">
+          <button class="quick-btn" onclick="startPreset('nul')">
+            <strong>J'ai l'impression d'avoir dit n'importe quoi</strong>
+            <span>Je me rejoue tout et je me sens ridicule.</span>
+          </button>
+          <button class="quick-btn" onclick="startPreset('blesse')">
+            <strong>J'ai peur d'avoir blessé</strong>
+            <span>Je doute de mes mots et je culpabilise.</span>
+          </button>
+          <button class="quick-btn" onclick="startPreset('pas-hauteur')">
+            <strong>Je n'ai pas été à la hauteur</strong>
+            <span>Je me sens nulle, maladroite, insuffisante.</span>
+          </button>
+          <button class="quick-btn" onclick="startPreset('obsession')">
+            <strong>Ça tourne en boucle</strong>
+            <span>Mon cerveau n'arrive plus à lâcher.</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Breathing exercise with real timer -->
+      <div class="card breath">
+        <div class="phase" id="breathPhase">Inspire doucement</div>
+        <div class="breath-timer-ring">
+          <svg class="breath-svg" viewBox="0 0 120 120">
+            <circle class="breath-track" cx="60" cy="60" r="55"/>
+            <circle class="breath-progress" id="breathRing" cx="60" cy="60" r="55"/>
+          </svg>
+          <div class="orb"></div>
+        </div>
+        <div class="breath-count" id="breathCount">20</div>
+        <div class="breath-label">secondes de pause</div>
+        <button class="breath-restart" onclick="startBreath()">↺ Recommencer</button>
+      </div>
+
+      <div class="card">
+        <h2>Ce que cette app fait</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div><strong>Elle ralentit la spirale</strong><p>Quand ton cerveau rejoue la scène encore et encore, tu peux entrer dans un flow très court et guidé.</p></div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div><strong>Elle te sort de la culpabilité</strong><p>Tu ne vas pas chercher la phrase parfaite. Tu vas te rappeler que tu as le droit d'être humaine.</p></div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div><strong>Elle t'aide à refermer la journée</strong><p>Pour ne pas continuer à te faire du mal longtemps après que la discussion soit finie.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="lw-footer">
+        <div class="lw-footer-container">
+          <div class="lw-footer-brand">
+            <h3>laboWeb</h3>
+            <p>Des outils simples pour apaiser, comprendre et avancer.</p>
+          </div>
+          <div class="lw-footer-links">
+            <a href="https://laboweb.tech" target="_blank">🌐 Site web</a>
+            <a href="https://paypal.me/JohannaCastagna" target="_blank">💛 Soutenir ce projet</a>
+          </div>
+          <div class="lw-footer-legal">
+            <p>© 2026 laboWeb</p>
+            <button class="btn-replay" id="replayOnboardingBtn">✨ Revoir l'intro</button>
+          </div>
+        </div>
+      </footer>
+    </section>
+
+    <!-- FLOW GUIDÉ -->
+    <section class="screen hidden" id="screen-flow">
+      <div class="top-space"></div>
+
+      <div class="card">
+        <h2>Flow guidé</h2>
+        <p class="muted">Quand ça recommence, suis simplement les étapes. Pas besoin de réfléchir plus.</p>
+        <div class="flow-progress" style="margin-top:14px;">
+          <div class="fp-step done" id="fp1"></div>
+          <div class="fp-step" id="fp2"></div>
+          <div class="fp-step" id="fp3"></div>
+          <div class="fp-step" id="fp4"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>1. Nommer ce qui fait mal</h3>
+        <p class="muted">Choisis la pensée dominante en ce moment.</p>
+        <div class="selector" id="thoughtSelector">
+          <button class="chip active" data-value="J'ai peur d'avoir mal parlé">J'ai peur d'avoir mal parlé</button>
+          <button class="chip" data-value="J'ai peur d'avoir blessé">J'ai peur d'avoir blessé</button>
+          <button class="chip" data-value="Je me sens nulle">Je me sens nulle</button>
+          <button class="chip" data-value="Je n'arrive pas à décrocher">Je n'arrive pas à décrocher</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>2. Revenir au réel</h3>
+        <div class="steps">
+          <div class="step"><div class="step-num">A</div><div><strong>La discussion est finie.</strong><p>Elle n'existe plus que dans ta tête.</p></div></div>
+          <div class="step"><div class="step-num">B</div><div><strong>Tu n'es pas en danger.</strong><p>Ton corps réagit comme s'il fallait réparer tout de suite, mais tu peux ralentir.</p></div></div>
+          <div class="step"><div class="step-num">C</div><div><strong>Tu n'as pas besoin d'être parfaite.</strong><p>Tu avais le droit d'être hésitante, maladroite ou fatiguée.</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>3. Choisir une phrase d'apaisement</h3>
+        <p class="muted">Appuie sur celle qui résonne. Elle sera copiée.</p>
+        <div class="affirmations" id="affirmationsList">
+          <button class="affirmation" onclick="copyAffirmation(this)">Je n'ai pas besoin d'être parfaite pour avoir de la valeur.<small>Appuie pour garder cette phrase.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">J'ai fait de mon mieux avec mon état du moment.<small>Appuie pour garder cette phrase.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Le malaise que je ressens ne prouve pas que j'ai fait quelque chose de grave.<small>Appuie pour garder cette phrase.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Je peux être maladroite sans être mauvaise.<small>Appuie pour garder cette phrase.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Je ne vais pas me punir toute la soirée pour une conversation imparfaite.<small>Appuie pour garder cette phrase.</small></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>4. Fermer la boucle</h3>
+        <p class="muted">Écris une seule phrase. Pas une analyse complète.</p>
+        <textarea class="journal-box" id="releaseText" placeholder="Exemple : J'ai parlé comme j'ai pu aujourd'hui, et je me laisse en paix maintenant."></textarea>
+        <div class="cta-row" style="margin-top:12px;">
+          <button class="btn-primary" onclick="closeLoop()">Stop à la boucle 🌿</button>
+        </div>
+        <div class="result" id="loopResult" style="display:none; margin-top:14px;"></div>
+      </div>
+    </section>
+
+    <!-- RESSOURCES -->
+    <section class="screen hidden" id="screen-ressources">
+      <div class="top-space"></div>
+
+      <div class="card">
+        <h2>Boîte d'apaisement</h2>
+        <p class="muted">Des raccourcis simples à utiliser quand la culpabilité revient.</p>
+      </div>
+
+      <div class="card">
+        <h3>Avant / Après</h3>
+        <div class="steps">
+          <div class="step"><div class="step-num">😣</div><div><strong>Avant</strong><p>"J'ai dit de la merde. J'ai sûrement blessé. Je suis nulle."</p></div></div>
+          <div class="step"><div class="step-num">🌿</div><div><strong>Après</strong><p>"Je me sens mal, mais je ne suis pas obligée de me punir pour ça."</p></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Rappels anti-culpabilité</h3>
+        <p class="muted" style="margin-bottom:12px;">Appuie pour copier.</p>
+        <div class="affirmations">
+          <button class="affirmation" onclick="copyAffirmation(this)">Les autres ne repassent probablement pas la scène comme moi.<small>Appuie pour copier.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Un malaise intérieur n'est pas forcément un signal de faute réelle.<small>Appuie pour copier.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Je peux manquer d'aisance sans manquer de valeur.<small>Appuie pour copier.</small></button>
+          <button class="affirmation" onclick="copyAffirmation(this)">Je n'ai pas besoin de corriger toute la journée dans ma tête.<small>Appuie pour copier.</small></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Pour partager ce projet</h3>
+        <p class="muted">Accroche simple pour présenter l'app :</p>
+        <button class="affirmation" onclick="copyAffirmation(this)">Tu repasses tes conversations en boucle dans ta tête après avoir parlé ? J'ai créé une petite app en français pour aider à stopper la rumination, la culpabilité et le sentiment d'avoir mal dit.<small>Appuie pour copier.</small></button>
+      </div>
+
+      <footer class="lw-footer">
+        <div class="lw-footer-container">
+          <div class="lw-footer-brand">
+            <h3>laboWeb</h3>
+            <p>Des outils simples pour apaiser, comprendre et avancer.</p>
+          </div>
+          <div class="lw-footer-links">
+            <a href="https://laboweb.tech" target="_blank">🌐 Site web</a>
+            <a href="https://paypal.me/JohannaCastagna" target="_blank">💛 Soutenir ce projet</a>
+          </div>
+          <div class="lw-footer-legal">
+            <p>© 2026 laboWeb</p>
+            <button class="btn-replay" id="replayOnboardingBtn2">✨ Revoir l'intro</button>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <!-- Nav bar -->
+  <div class="footer-bar">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('screen-home')">
+      <span class="nav-icon">🏠</span>Accueil
+    </button>
+    <button class="nav-btn" id="nav-flow" onclick="navTo('screen-flow')">
+      <span class="nav-icon">🌀</span>Flow guidé
+    </button>
+    <button class="nav-btn" id="nav-res" onclick="navTo('screen-ressources')">
+      <span class="nav-icon">🌿</span>Ressources
+    </button>
+  </div>
+
+  <div class="toast" id="toast">Copié 💛</div>
+
+  <script>
+    const ONBOARDING_KEY = 'apres_avoir_parle_onboarding_seen';
+    let currentScreen = 'screen-home';
+    const toast = document.getElementById('toast');
+
+    // ── BREATH TIMER ──
+    const BREATH_DURATION = 20;
+    const CIRCUMFERENCE = 2 * Math.PI * 55; // ~345.6
+    let breathInterval = null;
+    let breathRemaining = BREATH_DURATION;
+    const breathPhases = ['Inspire doucement', 'Garde un instant', 'Expire lentement'];
+    let breathPhaseIdx = 0;
+
+    function updateBreathRing(remaining) {
+      const ring = document.getElementById('breathRing');
+      const count = document.getElementById('breathCount');
+      if (!ring || !count) return;
+      const progress = remaining / BREATH_DURATION;
+      ring.style.strokeDasharray = CIRCUMFERENCE;
+      ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+      count.textContent = remaining;
+    }
+
+    function startBreath() {
+      clearInterval(breathInterval);
+      breathRemaining = BREATH_DURATION;
+      breathPhaseIdx = 0;
+      document.getElementById('breathPhase').textContent = breathPhases[0];
+      updateBreathRing(BREATH_DURATION);
+
+      const phaseInterval = setInterval(() => {
+        breathPhaseIdx = (breathPhaseIdx + 1) % breathPhases.length;
+        const el = document.getElementById('breathPhase');
+        if (el) el.textContent = breathPhases[breathPhaseIdx];
+      }, Math.floor((BREATH_DURATION * 1000) / breathPhases.length));
+
+      breathInterval = setInterval(() => {
+        breathRemaining--;
+        updateBreathRing(breathRemaining);
+        if (breathRemaining <= 0) {
+          clearInterval(breathInterval);
+          clearInterval(phaseInterval);
+          const el = document.getElementById('breathPhase');
+          if (el) el.textContent = 'Tu peux relâcher ✨';
+        }
+      }, 1000);
+    }
+
+    // Start breath on load
+    window.addEventListener('load', () => {
+      updateBreathRing(BREATH_DURATION);
+      startBreath();
+    });
+
+    // ── TOAST ──
+    function showToast(message = 'Copié 💛') {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    // ── NAVIGATION ──
+    function showScreen(id, direction = 'forward') {
+      const prev = document.getElementById(currentScreen);
+      const next = document.getElementById(id);
+      if (prev === next) return;
+      if (direction === 'forward') prev.classList.add('exit-left');
+      else prev.classList.add('hidden');
+      next.classList.remove('hidden', 'exit-left');
+      next.scrollTop = 0;
+      setTimeout(() => prev.classList.add('hidden'), 340);
+      currentScreen = id;
+    }
+
+    function setActiveNav(targetId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      if (targetId === 'screen-home') document.getElementById('nav-home').classList.add('active');
+      if (targetId === 'screen-flow') document.getElementById('nav-flow').classList.add('active');
+      if (targetId === 'screen-ressources') document.getElementById('nav-res').classList.add('active');
+    }
+
+    function navTo(screenId) {
+      setActiveNav(screenId);
+      showScreen(screenId, screenId === 'screen-home' ? 'back' : 'forward');
+    }
+
+    function openFlow() {
+      setActiveNav('screen-flow');
+      showScreen('screen-flow', 'forward');
+    }
+
+    // ── PRESETS ──
+    function startPreset(type) {
+      openFlow();
+      const map = {
+        'nul': 'Je me sens nulle',
+        'blesse': "J'ai peur d'avoir blessé",
+        'pas-hauteur': 'Je me sens nulle',
+        'obsession': "Je n'arrive pas à décrocher"
+      };
+      const wanted = map[type] || "J'ai peur d'avoir mal parlé";
+      document.querySelectorAll('#thoughtSelector .chip').forEach(chip => {
+        chip.classList.toggle('active', chip.dataset.value === wanted);
+      });
+    }
+
+    // ── CHIPS ──
+    document.querySelectorAll('#thoughtSelector .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#thoughtSelector .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+
+    // ── COPY AFFIRMATION ──
+    function copyAffirmation(el) {
+      const text = el.childNodes[0].textContent.trim();
+      navigator.clipboard?.writeText(text).catch(() => {});
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 1800);
+      showToast('Phrase gardée 💛');
+    }
+
+    // ── CLOSE LOOP ──
+    function closeLoop() {
+      const text = document.getElementById('releaseText').value.trim();
+      const chosen = document.querySelector('#thoughtSelector .chip.active')?.dataset.value || 'Cette pensée';
+      const result = document.getElementById('loopResult');
+      const finalText = text || 'Je me sens encore secouée, mais je choisis de ne pas continuer à me faire du mal ce soir.';
+      result.style.display = 'block';
+      result.innerHTML = `Tu as reconnu : <strong>${chosen}</strong><br><br>Et tu choisis maintenant :<br><strong>${finalText}</strong><br><br>🌿 La boucle peut s'arrêter ici.`;
+      navigator.clipboard?.writeText(finalText).catch(() => {});
+      showToast('Boucle refermée 🌿');
+
+      // Update flow progress
+      ['fp1','fp2','fp3','fp4'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('done');
+      });
+
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ── ONBOARDING ──
+    const OB_TOTAL = 3;
+    let obSlide = 0;
+    const obEl = document.getElementById('onboarding');
+    const obTrack = document.getElementById('ob-track');
+    const obDots = document.querySelectorAll('.ob-dot');
+    const btnBack = document.getElementById('btn-ob-back');
+    const btnNext = document.getElementById('btn-ob-next');
+
+    function goToSlide(n) {
+      obSlide = n;
+      obTrack.style.transform = `translateX(-${(n / OB_TOTAL) * 100}%)`;
+      obDots.forEach((d, i) => d.classList.toggle('active', i === n));
+      btnBack.classList.toggle('invisible', n === 0);
+      if (n === OB_TOTAL - 1) {
+        btnNext.textContent = 'Entrer dans l\'app ✨';
+        btnNext.classList.add('final');
+      } else {
+        btnNext.textContent = 'Suivant ›';
+        btnNext.classList.remove('final');
+      }
+    }
+
+    function closeOnboarding() {
+      obEl.classList.add('fade-out');
+      setTimeout(() => obEl.classList.add('hidden'), 500);
+      localStorage.setItem(ONBOARDING_KEY, '1');
+    }
+
+    function replayOnboarding() {
+      goToSlide(0);
+      obEl.classList.remove('fade-out', 'hidden');
+    }
+
+    // Swipe
+    let txStart = 0, txDelta = 0;
+    obTrack.addEventListener('touchstart', e => { txStart = e.touches[0].clientX; obTrack.classList.add('dragging'); }, { passive: true });
+    obTrack.addEventListener('touchmove', e => {
+      txDelta = e.touches[0].clientX - txStart;
+      const base = -(obSlide / OB_TOTAL) * 100;
+      obTrack.style.transform = `translateX(calc(${base}% + ${txDelta}px))`;
+    }, { passive: true });
+    obTrack.addEventListener('touchend', () => {
+      obTrack.classList.remove('dragging');
+      obTrack.style.transform = '';
+      if (txDelta < -50 && obSlide < OB_TOTAL - 1) goToSlide(obSlide + 1);
+      else if (txDelta > 50 && obSlide > 0) goToSlide(obSlide - 1);
+      else goToSlide(obSlide);
+      txDelta = 0;
+    });
+
+    obDots.forEach(d => d.addEventListener('click', () => goToSlide(+d.dataset.slide)));
+    document.getElementById('btn-skip').addEventListener('click', closeOnboarding);
+    btnBack.addEventListener('click', () => { if (obSlide > 0) goToSlide(obSlide - 1); });
+    btnNext.addEventListener('click', () => {
+      if (obSlide < OB_TOTAL - 1) goToSlide(obSlide + 1);
+      else closeOnboarding();
+    });
+
+    document.getElementById('replayOnboardingBtn').addEventListener('click', replayOnboarding);
+    document.getElementById('replayOnboardingBtn2').addEventListener('click', replayOnboarding);
+
+    if (localStorage.getItem(ONBOARDING_KEY)) {
+      obEl.classList.add('hidden');
+    } else {
+      goToSlide(0);
+    }
+
+    // ── SERVICE WORKER ──
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
